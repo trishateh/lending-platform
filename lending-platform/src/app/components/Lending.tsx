@@ -8,16 +8,16 @@ import {
 } from "@web3modal/ethers/react";
 import tokenAbi from "../../../abi/tokenAbi.json";
 import nftAbi from "../../../abi/nftAbi.json";
-
-const { ethers } = require("ethers");
+import { BrowserProvider, ethers } from "ethers";
 
 export const Lending = () => {
   const [tokenId, setTokenId] = useState<any>();
   const [amount, setAmount] = useState<any>();
   const [loading, setLoading] = useState(false);
-  const [repayAmount, setRepayAmount] = useState<any>();
+  const [repayAmount, setRepayAmount] = useState<number>();
 
   const { address, chainId, isConnected } = useWeb3ModalAccount();
+  const { walletProvider } = useWeb3ModalProvider();
   const nftAddress = process.env.NEXT_PUBLIC_NFT_ADDRESS ?? "";
   const tokenAddress = process.env.NEXT_PUBLIC_TOKEN_ADDRESS ?? "";
   const lendingAddress = process.env.NEXT_PUBLIC_LENDING_ADDRESS ?? "";
@@ -32,19 +32,40 @@ export const Lending = () => {
   );
   const nftContract = new ethers.Contract(nftAddress, nftAbi, infuraProvider);
 
+  const handleTokenAllowance = async () => {
+    try {
+      const allowance = await tokenContract.allowance(address, lendingAddress);
+      const formatAllowance = parseInt(ethers.formatEther(allowance));
+      const balance = await tokenContract.balanceOf(address);
+
+      if (repayAmount && balance < repayAmount) {
+        alert("Not enough funds to repay loan");
+        return;
+      }
+
+      if (repayAmount && formatAllowance < repayAmount) {
+        const provider = new BrowserProvider(walletProvider as any);
+
+        const signer = await provider.getSigner();
+        const contract = new ethers.Contract(tokenAddress, tokenAbi, signer);
+        const tx = await contract.approve(lendingAddress, repayAmount);
+      }
+    } catch (err) {
+      console.log("Error giving approval: ", err);
+    }
+  };
+
   const handleNftApproval = async () => {
     try {
-      const isApproved = await nftContract.isApprovalForAll(
+      const isApproved = await nftContract.isApprovedForAll(
         address,
         lendingAddress
       );
       if (!isApproved) {
-        const signer = infuraProvider.getSigner();
-        const contract = new ethers.Contract(
-          lendingAddress,
-          lendingAbi,
-          signer
-        );
+        const provider = new BrowserProvider(walletProvider as any);
+
+        const signer = await provider.getSigner();
+        const contract = new ethers.Contract(nftAddress, nftAbi, signer);
         const tx = await contract.setApprovalForAll(lendingAddress, true);
       }
     } catch (err) {
@@ -56,11 +77,13 @@ export const Lending = () => {
     setLoading(true);
     try {
       await handleNftApproval();
-      const signer = infuraProvider.getSigner();
+      const provider = new BrowserProvider(walletProvider as any);
+
+      const signer = await provider.getSigner();
       const contract = new ethers.Contract(lendingAddress, lendingAbi, signer);
       const transaction = await contract.borrowAgainstNFT(
         tokenId,
-        ethers.utils.parseEther(amount)
+        ethers.parseEther((amount ?? 0).toString())
       );
       await transaction.wait();
       alert("Transaction confirmed!");
@@ -74,7 +97,10 @@ export const Lending = () => {
   const handleRepay = async () => {
     setLoading(true);
     try {
-      const signer = infuraProvider.getSigner();
+      await handleTokenAllowance();
+      const provider = new BrowserProvider(walletProvider as any);
+
+      const signer = await provider.getSigner();
       const contract = new ethers.Contract(lendingAddress, lendingAbi, signer);
       const transaction = await contract.repayLoan(tokenId);
       await transaction.wait();
@@ -89,7 +115,9 @@ export const Lending = () => {
   const handleClaimCollateral = async () => {
     setLoading(true);
     try {
-      const signer = infuraProvider.getSigner();
+      const provider = new BrowserProvider(walletProvider as any);
+
+      const signer = await provider.getSigner();
       const contract = new ethers.Contract(lendingAddress, lendingAbi, signer);
       const transaction = await contract.claimCollateral(tokenId);
       await transaction.wait();
@@ -101,15 +129,23 @@ export const Lending = () => {
     }
   };
 
-  const getRepayAmount = async (tokenId: any) => {
+  const getRepayAmount = async (tokenId: number) => {
     try {
       const contract = new ethers.Contract(
         lendingAddress,
         lendingAbi,
         infuraProvider
       );
-      const amount = await contract.calculateRepaymentAmount(tokenId);
-      setRepayAmount(ethers.utils.formatEther(amount));
+
+      const loan = await contract.loans(tokenId);
+      const borrowedAmount = loan.amount;
+
+      const repayAmount = await contract.calculateRepaymentAmount(
+        borrowedAmount
+      );
+
+      setRepayAmount(parseInt(ethers.formatEther(repayAmount)));
+      console.log("Repay Amount:", ethers.formatEther(repayAmount));
     } catch (error) {
       console.error("Error fetching repayment amount:", error);
     }
@@ -126,7 +162,7 @@ export const Lending = () => {
             NFT Token ID
           </label>
           <input
-            type="text"
+            type="number"
             value={tokenId}
             onChange={(e: any) => setTokenId(e.target.value)}
             className="shadow appearance-none border border-gray-600 rounded w-full py-2 px-3 bg-gray-900 text-gray-200 leading-tight focus:outline-none focus:border-blue-500"
@@ -139,7 +175,7 @@ export const Lending = () => {
             Borrow Amount (ETH)
           </label>
           <input
-            type="text"
+            type="number"
             value={amount}
             onChange={(e: any) => setAmount(e.target.value)}
             className="shadow appearance-none border border-gray-600 rounded w-full py-2 px-3 bg-gray-900 text-gray-200 leading-tight focus:outline-none focus:border-blue-500"

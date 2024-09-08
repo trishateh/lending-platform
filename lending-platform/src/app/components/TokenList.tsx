@@ -23,10 +23,10 @@ export const TokenList = () => {
   const contract = new ethers.Contract(tokenContract, tokenAbi, infuraProvider);
 
   useEffect(() => {
-    if (infuraProvider && address) {
+    if (address && isConnected) {
       fetchTokens();
     }
-  }, [address]);
+  }, [address, isConnected]);
 
   const fetchTokens = async () => {
     try {
@@ -57,13 +57,17 @@ export const TokenList = () => {
   };
   return (
     <>
-      {loading ? (
+      {!isConnected && !loading ? (
+        <div className="text-center text-lg text-gray-200">
+          Please connect your wallet
+        </div>
+      ) : loading ? (
         <div className="text-center text-lg text-gray-200">
           Loading tokens...
         </div>
       ) : (
-        <div className="container mx-auto py-10 flex justify-center">
-          <div className="bg-gray-800 shadow-md rounded-lg overflow-hidden p-6 w-full sm:w-1/2 md:w-1/3 lg:w-1/4">
+        <div className="container mx-auto py-10 flex justify-start items-center">
+          <div className="bg-gray-800 shadow-md rounded-lg p-6 w-full sm:w-1/2 md:w-1/3 lg:w-1/4">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <div className="bg-gray-700 rounded-full p-4 flex items-center justify-center">

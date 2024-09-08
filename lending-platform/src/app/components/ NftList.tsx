@@ -23,10 +23,10 @@ export const NftList = () => {
   const contract = new ethers.Contract(nftContract, nftAbi, infuraProvider);
 
   useEffect(() => {
-    if (infuraProvider && address) {
+    if (address && isConnected) {
       fetchNfts();
     }
-  }, [address]);
+  }, [address, isConnected]);
 
   const fetchNfts = async () => {
     try {
@@ -74,7 +74,11 @@ export const NftList = () => {
 
   return (
     <div className="container mx-auto py-10">
-      {loading ? (
+      {!isConnected && !loading ? (
+        <div className="text-center text-lg text-gray-200">
+          Please connect your wallet
+        </div>
+      ) : loading ? (
         <div className="text-center text-lg text-gray-200">Loading NFTs...</div>
       ) : nfts.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
