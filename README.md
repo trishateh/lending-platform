@@ -4,4 +4,4 @@ The smart contracts are written in Solidity, deployed onto the Linea network, an
 There are further project description in the respective folders.
 
 # Aim
-- The project uses Consensys' ecosystem of products to demonstrate the ability to build a decentralized application from end to end.
+- The project uses Consensys' ecosystem of products (MetaMask SDK, Infura, Linea) to demonstrate the ability to build a decentralized application from end to end.
