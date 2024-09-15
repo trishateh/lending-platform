@@ -1,3 +1,4 @@
 {
-  "SimpleLendingModule#SimpleLending": "0xB4a2F5fB72fCA9F35942ab22b9EF29A7fd0bA7BB"
+  "SimpleLendingModule#SimpleLending": "0xB4a2F5fB72fCA9F35942ab22b9EF29A7fd0bA7BB",
+  "LendingBorrowingModule#LendingBorrowing": "0xc98b69e898C8cAfc7E8eaD8796a02a51307bF514"
 }

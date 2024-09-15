@@ -1,13 +1,11 @@
 const { buildModule } = require("@nomicfoundation/hardhat-ignition/modules");
 
-const lendingToken = "0x692f50c2fb942B6cadB8f65E7717Ae40F1e1ba87";
-const interestRate = 5; // 5% interest
+const initialOwner = process.env.WALLET_ADDRESS;
 
-module.exports = buildModule("LendingBorrowingModule", (m) => {
-  const token = m.getParameter("lendingToken", lendingToken);
-  const interest = m.getParameter("interestRate", interestRate);
+module.exports = buildModule("MockTokenModule", (m) => {
+  const owner = m.getParameter("initialOwner", initialOwner);
 
-  const lendingBorrowing = m.contract("LendingBorrowing", [token, interest]);
+  const mockToken = m.contract("MockToken", [owner]);
 
-  return { lendingBorrowing };
+  return { mockToken };
 });

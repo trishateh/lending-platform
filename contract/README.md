@@ -14,8 +14,13 @@ npx hardhat ignition deploy ./ignition/modules/SimpleLending.js --network linea_
 # Deployments
 Linea Sepolia testnet: 
 Simple Lending contract address: 0xB4a2F5fB72fCA9F35942ab22b9EF29A7fd0bA7BB
+
 BONE token contract address: [0x692f50c2fb942B6cadB8f65E7717Ae40F1e1ba87](https://sepolia.lineascan.build/address/0x692f50c2fb942B6cadB8f65E7717Ae40F1e1ba87)
+
 Pup NFT contract address: [0xc1EF9b45Cd110ad11bae39A173BDaE161E240557](https://sepolia.lineascan.build/address/0xc1EF9b45Cd110ad11bae39A173BDaE161E240557)
+
+Lending Borrowing contract address:
+0xc98b69e898C8cAfc7E8eaD8796a02a51307bF514
 
 ## Future Features:
 - Add access control to only allow admins to withdraw the NFT collateral.
