@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { NftList } from "./components/ NftList";
 import { TokenList } from "./components/TokenList";
 import { Lending } from "./components/Lending";
+import LoanInfo from "./components/loanInfo";
 
 const ethers = require("ethers");
 

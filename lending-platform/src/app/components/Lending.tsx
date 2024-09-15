@@ -1,20 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import abi from "../../../../contract/artifacts/contracts/SimpleLending.sol/SimpleLending.json";
+import abi from "../../../../contract/artifacts/contracts/LendingBorrowing.sol/LendingBorrowing.json";
 import {
   useWeb3ModalProvider,
   useWeb3ModalAccount,
 } from "@web3modal/ethers/react";
 import tokenAbi from "../../../abi/tokenAbi.json";
 import nftAbi from "../../../abi/nftAbi.json";
-import { BrowserProvider, ethers } from "ethers";
+import { BrowserProvider, ethers, Contract } from "ethers";
 
 export const Lending = () => {
   const [tokenId, setTokenId] = useState<any>();
   const [amount, setAmount] = useState<any>();
   const [loading, setLoading] = useState(false);
   const [repayAmount, setRepayAmount] = useState<number>();
+  const [loanId, setLoanId] = useState<number>();
+  const [canClaim, setCanClaim] = useState(false);
 
   const { address, chainId, isConnected } = useWeb3ModalAccount();
   const { walletProvider } = useWeb3ModalProvider();
@@ -32,7 +34,35 @@ export const Lending = () => {
   );
   const nftContract = new ethers.Contract(nftAddress, nftAbi, infuraProvider);
 
+  useEffect(() => {
+    canClaimCollateral();
+  }, [address, loanId]);
+
   const handleTokenAllowance = async () => {
+    try {
+      const allowance = await tokenContract.allowance(address, lendingAddress);
+      const formatAllowance = parseInt(ethers.formatEther(allowance));
+      const balance = await tokenContract.balanceOf(address);
+
+      if (amount && balance < amount) {
+        alert("Insufficient funds to fund loan");
+        return;
+      }
+
+      if (amount && formatAllowance < amount) {
+        const provider = new BrowserProvider(walletProvider as any);
+
+        const signer = await provider.getSigner();
+        const contract = new ethers.Contract(tokenAddress, tokenAbi, signer);
+        const tx = await contract.approve(lendingAddress, amount);
+        await tx.wait();
+      }
+    } catch (err) {
+      console.log("Error giving approval: ", err);
+    }
+  };
+
+  const handleRepayAllowance = async () => {
     try {
       const allowance = await tokenContract.allowance(address, lendingAddress);
       const formatAllowance = parseInt(ethers.formatEther(allowance));
@@ -49,6 +79,7 @@ export const Lending = () => {
         const signer = await provider.getSigner();
         const contract = new ethers.Contract(tokenAddress, tokenAbi, signer);
         const tx = await contract.approve(lendingAddress, repayAmount);
+        await tx.wait();
       }
     } catch (err) {
       console.log("Error giving approval: ", err);
@@ -67,13 +98,14 @@ export const Lending = () => {
         const signer = await provider.getSigner();
         const contract = new ethers.Contract(nftAddress, nftAbi, signer);
         const tx = await contract.setApprovalForAll(lendingAddress, true);
+        await tx.wait();
       }
     } catch (err) {
       console.log("Error giving approval: ", err);
     }
   };
 
-  const handleBorrow = async () => {
+  const handleCreateLoan = async () => {
     setLoading(true);
     try {
       await handleNftApproval();
@@ -81,14 +113,36 @@ export const Lending = () => {
 
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(lendingAddress, lendingAbi, signer);
-      const transaction = await contract.borrowAgainstNFT(
+      const transaction = await contract.createLoan(
+        ethers.parseEther((amount ?? 0).toString()),
+        // NFT address fixed for demo purposes
+        process.env.NEXT_PUBLIC_NFT_ADDRESS,
         tokenId,
+        // NFT price is set to be >= loan amount for now. TODO: get NFT price from API or on the contract via oracle.
         ethers.parseEther((amount ?? 0).toString())
       );
       await transaction.wait();
       alert("Transaction confirmed!");
     } catch (error) {
-      console.error("Error during borrowing:", error);
+      console.error("Error during loan creation:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFundLoan = async () => {
+    setLoading(true);
+    try {
+      await handleTokenAllowance();
+      const provider = new BrowserProvider(walletProvider as any);
+
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(lendingAddress, lendingAbi, signer);
+      const transaction = await contract.fundLoan(loanId);
+      await transaction.wait();
+      alert("Transaction confirmed!");
+    } catch (error) {
+      console.error("Error during repayment:", error);
     } finally {
       setLoading(false);
     }
@@ -97,12 +151,12 @@ export const Lending = () => {
   const handleRepay = async () => {
     setLoading(true);
     try {
-      await handleTokenAllowance();
+      await handleRepayAllowance();
       const provider = new BrowserProvider(walletProvider as any);
 
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(lendingAddress, lendingAbi, signer);
-      const transaction = await contract.repayLoan(tokenId);
+      const transaction = await contract.repayLoan(loanId);
       await transaction.wait();
       alert("Transaction confirmed!");
     } catch (error) {
@@ -119,7 +173,7 @@ export const Lending = () => {
 
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(lendingAddress, lendingAbi, signer);
-      const transaction = await contract.claimCollateral(tokenId);
+      const transaction = await contract.claimCollateral(loanId);
       await transaction.wait();
       console.log("Transaction confirmed!");
     } catch (error) {
@@ -129,7 +183,7 @@ export const Lending = () => {
     }
   };
 
-  const getRepayAmount = async (tokenId: number) => {
+  const getRepayAmount = async (amount: number) => {
     try {
       const contract = new ethers.Contract(
         lendingAddress,
@@ -137,17 +191,48 @@ export const Lending = () => {
         infuraProvider
       );
 
-      const loan = await contract.loans(tokenId);
+      const loan = await contract.getLoanInfo(loanId);
       const borrowedAmount = loan.amount;
 
-      const repayAmount = await contract.calculateRepaymentAmount(
-        borrowedAmount
-      );
+      const repayAmount = await contract.getRepaymentAmount(borrowedAmount);
 
       setRepayAmount(parseInt(ethers.formatEther(repayAmount)));
       console.log("Repay Amount:", ethers.formatEther(repayAmount));
     } catch (error) {
       console.error("Error fetching repayment amount:", error);
+    }
+  };
+
+  const canClaimCollateral = async () => {
+    try {
+      const contract = new ethers.Contract(
+        lendingAddress,
+        lendingAbi,
+        infuraProvider
+      );
+
+      const loan = await contract.getLoanInfo(loanId);
+      const status = await contract.getLoanStatus(loanId);
+      const currentTime = Math.floor(Date.now() / 1000);
+
+      // Borrower can claim if loan is ACTIVE
+      const cancelLoan = status === 0;
+
+      // Lender can claim if loan is FUNDED and due date has passed
+      const defaultLoan = status === 1 && loan.dueDate < currentTime;
+
+      if (
+        (cancelLoan &&
+          loan.borrower.toLowerCase() === address!.toLowerCase()) ||
+        (defaultLoan && loan.lender.toLowerCase() === address!.toLowerCase())
+      ) {
+        setCanClaim(true);
+      } else {
+        setCanClaim(false);
+      }
+    } catch (error) {
+      console.error("Error checking collateral claim:", error);
+      setCanClaim(false);
     }
   };
 
@@ -183,13 +268,21 @@ export const Lending = () => {
           />
         </div>
 
-        <div className="flex justify-between space-x-4">
+        <div className="flex flex-col gap-3">
           <button
-            onClick={handleBorrow}
+            onClick={handleCreateLoan}
+            className="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            disabled={loading}
+          >
+            {loading ? "Processing..." : "Create Loan"}
+          </button>
+
+          <button
+            onClick={handleFundLoan}
             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
             disabled={loading}
           >
-            {loading ? "Processing..." : "Borrow"}
+            {loading ? "Processing..." : "Fund Loan"}
           </button>
 
           <button
@@ -198,20 +291,31 @@ export const Lending = () => {
           >
             Get Repay Amount
           </button>
-        </div>
 
-        {repayAmount && (
-          <div className="mt-4 text-center">
-            <p className="text-gray-300">Repayment Amount: {repayAmount} ETH</p>
+          {repayAmount && (
+            <div className="mt-4 text-center">
+              <p className="text-gray-300">
+                Repayment Amount: {repayAmount} ETH
+              </p>
+              <button
+                onClick={handleRepay}
+                className="mt-2 bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                disabled={loading}
+              >
+                {loading ? "Processing..." : "Repay Loan"}
+              </button>
+            </div>
+          )}
+
+          {canClaim && (
             <button
-              onClick={handleRepay}
-              className="mt-2 bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-              disabled={loading}
+              onClick={handleClaimCollateral}
+              className="bg-pink-500 hover:bg-pink-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
             >
-              {loading ? "Processing..." : "Repay Loan"}
+              Claim Collateral
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

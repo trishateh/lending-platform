@@ -91,11 +91,6 @@ contract LendingBorrowing is ReentrancyGuard, Ownable, IERC721Receiver {
             "NFT collateral value less than loan."
         );
 
-        require(
-            IERC721(_nftAddress).getApproved(_nftTokenId) == address(this),
-            "Contract not approved for handling NFT."
-        );
-
         // Transfer NFT to contract
         IERC721(_nftAddress).safeTransferFrom(
             msg.sender,
@@ -227,8 +222,96 @@ contract LendingBorrowing is ReentrancyGuard, Ownable, IERC721Receiver {
         return _amount + ((_amount * interestRate) / 100);
     }
 
+    /**
+     * @notice Gets the details of a loan.
+     * @param _loanId The ID of the loan to retrieve.
+     * @return Loan struct containing loan details.
+     */
     function getLoanInfo(uint256 _loanId) external view returns (Loan memory) {
-        Loan memory loan = loans[_loanId];
-        return loan;
+        return loans[_loanId];
+    }
+
+    /**
+     * @notice Retrieves all loans for a given borrower.
+     * @param _borrower The address of the borrower.
+     * @return loanIds Array of loan IDs associated with the borrower.
+     */
+    function getLoansByBorrower(
+        address _borrower
+    ) external view returns (uint256[] memory loanIds) {
+        uint256 loanCounter = 0;
+        uint256[] memory tempLoans = new uint256[](loanCount);
+
+        for (uint256 i = 0; i < loanCount; i++) {
+            if (loans[i].borrower == _borrower) {
+                tempLoans[loanCounter] = i;
+                loanCounter++;
+            }
+        }
+
+        uint256[] memory borrowerLoans = new uint256[](loanCounter);
+        for (uint256 i = 0; i < loanCounter; i++) {
+            borrowerLoans[i] = tempLoans[i];
+        }
+
+        return borrowerLoans;
+    }
+
+    /**
+     * @notice Retrieves all loans for a given lender.
+     * @param _lender The address of the lender.
+     * @return loanIds Array of loan IDs associated with the lender.
+     */
+    function getLoansByLender(
+        address _lender
+    ) external view returns (uint256[] memory loanIds) {
+        uint256 loanCounter = 0;
+        uint256[] memory tempLoans = new uint256[](loanCount);
+
+        for (uint256 i = 0; i < loanCount; i++) {
+            if (loans[i].lender == _lender) {
+                tempLoans[loanCounter] = i;
+                loanCounter++;
+            }
+        }
+
+        uint256[] memory lenderLoans = new uint256[](loanCounter);
+        for (uint256 i = 0; i < loanCounter; i++) {
+            lenderLoans[i] = tempLoans[i];
+        }
+
+        return lenderLoans;
+    }
+
+    /**
+     * @notice Gets the status of a loan by its ID.
+     * @param _loanId The ID of the loan.
+     * @return LoanStatus The current status of the loan.
+     */
+    function getLoanStatus(uint256 _loanId) external view returns (LoanStatus) {
+        return loans[_loanId].status;
+    }
+
+    /**
+     * @notice Retrieves all active loans that are not yet funded.
+     * @return loanIds Array of active loan IDs.
+     */
+    function getActiveLoans() external view returns (uint256[] memory loanIds) {
+        uint256 loanCounter = 0;
+        uint256[] memory tempLoans = new uint256[](loanCount);
+
+        for (uint256 i = 0; i < loanCount; i++) {
+            if (loans[i].status == LoanStatus.ACTIVE) {
+                tempLoans[loanCounter] = i;
+                loanCounter++;
+            }
+        }
+
+        uint256[] memory activeLoans = new uint256[](loanCounter);
+        for (uint256 i = 0; i < loanCounter; i++) {
+            activeLoans[i] = tempLoans[i];
+        }
+
+        return activeLoans;
     }
 }
