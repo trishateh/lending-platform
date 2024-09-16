@@ -1,5 +1,5 @@
 ## Lending Platform Front End
-This is the front end for a borrowing and lending platform built with Next JS, Infura, Wallet Connect (incorporating MetaMask SDK) and Typescript. 
+This is the front end for a P2P borrowing and lending platform built with Next JS, Infura, Wallet Connect (incorporating MetaMask SDK) and Typescript. 
 
 ## Installation
 ```bash

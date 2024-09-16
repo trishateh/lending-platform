@@ -40,14 +40,37 @@ export const LoanInfo = () => {
       for (let loanId = 0; loanId < loanCount; loanId++) {
         const loan = await contract.getLoanInfo(loanId);
 
+        // The structure of the loan array:
+        const borrower = loan[0];
+        const amount = loan[1]; // BigNumber, needs formatting
+        const nftContract = loan[2];
+        const nftTokenId = loan[3]; // BigNumber, needs formatting
+        const lender = loan[4];
+        const dueDate = loan[5]; // Unix timestamp
+        const status = loan[6]; // Loan status enum
+
+        const loanData = {
+          loanId,
+          borrower,
+          amount: ethers.formatEther(amount.toString()),
+          nftContract,
+          nftTokenId: nftTokenId.toString(),
+          lender,
+          dueDate:
+            dueDate === BigInt(0)
+              ? "Not Available"
+              : new Date(Number(dueDate) * 1000).toLocaleString(),
+          status: status.toString(), // Enum status as string
+        };
+
         // Check if the logged-in wallet is the borrower
-        if (loan.borrower.toLowerCase() === address!.toLowerCase()) {
-          borrowerLoansTemp.push({ loanId, ...loan });
+        if (borrower.toLowerCase() === address!.toLowerCase()) {
+          borrowerLoansTemp.push(loanData);
         }
 
         // Check if the logged-in wallet is the lender
-        if (loan.lender.toLowerCase() === address!.toLowerCase()) {
-          lenderLoansTemp.push({ loanId, ...loan });
+        if (lender.toLowerCase() === address!.toLowerCase()) {
+          lenderLoansTemp.push(loanData);
         }
       }
 
@@ -67,17 +90,17 @@ export const LoanInfo = () => {
   }, [address]);
 
   // Function to format loan status
-  const formatStatus = (status: number) => {
+  const formatStatus = (status: string) => {
     switch (status) {
-      case 0:
+      case "0":
         return "Active";
-      case 1:
+      case "1":
         return "Funded";
-      case 2:
+      case "2":
         return "Repaid";
-      case 3:
+      case "3":
         return "Defaulted";
-      case 4:
+      case "4":
         return "Canceled";
       default:
         return "Unknown";
@@ -85,36 +108,45 @@ export const LoanInfo = () => {
   };
 
   return (
-    <div className="p-4">
+    <div className="p-4 bg-gray-900">
       {loading ? (
-        <p>Loading loan information...</p>
+        <p className="text-gray-300 text-center">Loading loan information...</p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 gap-8">
           {/* Borrower's Loans Section */}
-          <div className="border rounded-lg p-4 shadow-lg bg-gray-50">
-            <h2 className="text-xl font-bold mb-4">Borrower Loans</h2>
+          <div className="border border-gray-700 rounded-lg p-4 shadow-lg bg-gray-800 break-words overflow-hidden whitespace-normal">
+            <h2 className="text-xl font-bold mb-4 text-gray-200">
+              Borrower Loans
+            </h2>
             {borrowerLoans.length > 0 ? (
               borrowerLoans.map((loan: any) => (
-                <div key={loan.loanId} className="border-b pb-2 mb-2">
-                  <p>
-                    <strong>Loan ID:</strong> {loan.loanId}
+                <div
+                  key={loan.loanId}
+                  className="border-b border-gray-700 pb-2 mb-2 whitespace-normal"
+                >
+                  <p className="text-gray-400">
+                    <strong className="text-gray-200">Loan ID:</strong>{" "}
+                    {loan.loanId}
                   </p>
-                  <p>
-                    <strong>Amount:</strong> {ethers.formatEther(loan.amount)}{" "}
-                    tokens
+                  <p className="text-gray-400">
+                    <strong className="text-gray-200">Amount:</strong>{" "}
+                    {loan.amount} tokens
                   </p>
-                  <p>
-                    <strong>NFT Contract:</strong> {loan.nftContract}
+                  <p className="text-gray-400">
+                    <strong className="text-gray-200">NFT Contract:</strong>{" "}
+                    {loan.nftContract}
                   </p>
-                  <p>
-                    <strong>NFT Token ID:</strong> {loan.nftTokenId}
+                  <p className="text-gray-400">
+                    <strong className="text-gray-200">NFT Token ID:</strong>{" "}
+                    {loan.nftTokenId}
                   </p>
-                  <p>
-                    <strong>Status:</strong> {formatStatus(loan.status)}
+                  <p className="text-gray-400">
+                    <strong className="text-gray-200">Status:</strong>{" "}
+                    {formatStatus(loan.status)}
                   </p>
-                  <p>
-                    <strong>Due Date:</strong>{" "}
-                    {new Date(loan.dueDate * 1000).toLocaleString()}
+                  <p className="text-gray-400">
+                    <strong className="text-gray-200">Due Date:</strong>{" "}
+                    {loan.dueDate}
                   </p>
                 </div>
               ))
@@ -124,35 +156,44 @@ export const LoanInfo = () => {
           </div>
 
           {/* Lender's Loans Section */}
-          <div className="border rounded-lg p-4 shadow-lg bg-gray-50">
-            <h2 className="text-xl font-bold mb-4">Lender Loans</h2>
+          <div className="border border-gray-700 rounded-lg p-4 shadow-lg bg-gray-800 break-words overflow-hidden whitespace-normal">
+            <h2 className="text-2xl font-bold mb-4 text-gray-200 ">
+              Lender Loans
+            </h2>
             {lenderLoans.length > 0 ? (
               lenderLoans.map((loan: any) => (
-                <div key={loan.loanId} className="border-b pb-2 mb-2">
-                  <p>
-                    <strong>Loan ID:</strong> {loan.loanId}
+                <div
+                  key={loan.loanId}
+                  className="border-b border-gray-700 pb-2 mb-2"
+                >
+                  <p className="text-gray-400">
+                    <strong className="text-gray-200">Loan ID:</strong>{" "}
+                    {loan.loanId}
                   </p>
-                  <p>
-                    <strong>Amount:</strong> {ethers.formatEther(loan.amount)}{" "}
-                    tokens
+                  <p className="text-gray-400">
+                    <strong className="text-gray-200">Amount:</strong>{" "}
+                    {loan.amount} tokens
                   </p>
-                  <p>
-                    <strong>NFT Contract:</strong> {loan.nftContract}
+                  <p className="text-gray-400">
+                    <strong className="text-gray-200">NFT Contract:</strong>{" "}
+                    {loan.nftContract}
                   </p>
-                  <p>
-                    <strong>NFT Token ID:</strong> {loan.nftTokenId}
+                  <p className="text-gray-400">
+                    <strong className="text-gray-200">NFT Token ID:</strong>{" "}
+                    {loan.nftTokenId}
                   </p>
-                  <p>
-                    <strong>Status:</strong> {formatStatus(loan.status)}
+                  <p className="text-gray-400">
+                    <strong className="text-gray-200">Status:</strong>{" "}
+                    {formatStatus(loan.status)}
                   </p>
-                  <p>
-                    <strong>Due Date:</strong>{" "}
-                    {new Date(loan.dueDate * 1000).toLocaleString()}
+                  <p className="text-gray-400">
+                    <strong className="text-gray-200">Due Date:</strong>{" "}
+                    {loan.dueDate}
                   </p>
                 </div>
               ))
             ) : (
-              <p>No loans as a lender.</p>
+              <p className="text-gray-400">No loans as a lender.</p>
             )}
           </div>
         </div>
