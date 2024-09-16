@@ -6,8 +6,7 @@ import {
   useWeb3ModalProvider,
   useWeb3ModalAccount,
 } from "@web3modal/ethers/react";
-
-const { ethers } = require("ethers");
+import { ethers, BrowserProvider, Contract } from "ethers";
 
 export const NftList = () => {
   const [nfts, setNfts] = useState<any>([]);
@@ -20,7 +19,7 @@ export const NftList = () => {
     `https://linea-sepolia.infura.io/v3/${process.env.NEXT_PUBLIC_INFURA_API_KEY}`
   );
 
-  const contract = new ethers.Contract(nftContract, nftAbi, infuraProvider);
+  const contract = new Contract(nftContract, nftAbi, infuraProvider);
 
   useEffect(() => {
     if (address && isConnected) {
@@ -72,6 +71,37 @@ export const NftList = () => {
     return url; // Return the original URL if it's not an IPFS URL
   };
 
+  const handleMintNft = async () => {
+    try {
+      const provider = new BrowserProvider(window.ethereum as any);
+      const signer = await provider.getSigner();
+      const contract = new Contract(nftContract, nftAbi, signer);
+      const receiver = address;
+      const quantity = 1;
+      const currency = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
+      const pricePerToken = 0;
+      const allowListProof = {
+        proof: [
+          "0x0000000000000000000000000000000000000000000000000000000000000000",
+        ],
+        quantityLimitPerWallet: "0",
+        pricePerToken: "0",
+        currency: "0x0000000000000000000000000000000000000000",
+      };
+      const tx = await contract.claim(
+        receiver,
+        quantity,
+        currency,
+        pricePerToken,
+        allowListProof
+      );
+      await tx.wait();
+    } catch (err) {
+      alert("Error Minting NFT");
+      console.log("Error minting NFT: ", err);
+    }
+  };
+
   return (
     <div className="container mx-auto py-10">
       {!isConnected && !loading ? (
@@ -101,8 +131,14 @@ export const NftList = () => {
           ))}
         </div>
       ) : (
-        <div className="text-center text-lg text-gray-200">
+        <div className="flex flex-col justify-center items-center text-center text-lg text-gray-200">
           You don't own any NFTs yet.
+          <button
+            onClick={() => handleMintNft()}
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          >
+            Claim 1 NFT
+          </button>
         </div>
       )}
     </div>
