@@ -88,8 +88,12 @@ npx hardhat ignition deploy ./ignition/modules/LendingBorrowing.js --network lin
 4. Interact with the Contract
 Once the contract is deployed, you can interact with it via the console, through scripts or via the front end project (lending-platform).
 
+## Diligence Fuzzing
+Diligence Fuzzing provides a comprehensive solution for identifying potential vulnerabilities in Ethereum smart contracts. Fuzzing campaigns can be run by annotating smart contracts with Scribble and running fuzzing campaigns.
 
-# Deployments
+Fuzzing was implemented for the contract LendingBorrowing.sol on the branch feature/fuzzing.
+
+## Deployments
 Linea Sepolia testnet: 
 
 BONE token contract address: [0x692f50c2fb942B6cadB8f65E7717Ae40F1e1ba87](https://sepolia.lineascan.build/address/0x692f50c2fb942B6cadB8f65E7717Ae40F1e1ba87)
