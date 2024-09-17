@@ -39,7 +39,6 @@ export const TokenList = () => {
       const res = await fetch(convertIpfsUrl(rawUri));
       const metadata = await res.json();
       const image = convertIpfsUrl(metadata.image);
-      console.log("img", image);
       setToken({ name, symbol, formatBal, image });
 
       setLoading(false);
@@ -74,14 +73,14 @@ export const TokenList = () => {
                   {/* <img className="w-40" src={token.image} alt="token image" /> */}
 
                   <span className="text-3xl font-bold text-blue-500">
-                    {token.symbol[0]}
+                    {token?.symbol[0]}
                   </span>
                 </div>
                 <div className="ml-4">
                   <h3 className="text-xl font-semibold text-white">
-                    {token.name}
+                    {token?.name}
                   </h3>
-                  <p className="text-gray-400">{token.symbol}</p>
+                  <p className="text-gray-400">{token?.symbol}</p>
                 </div>
               </div>
             </div>
@@ -89,7 +88,7 @@ export const TokenList = () => {
               <span className="text-2xl font-bold text-white">
                 {token.formatBal}
               </span>
-              <span className="ml-2 text-gray-400">{token.symbol}</span>
+              <span className="ml-2 text-gray-400">{token?.symbol}</span>
             </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import abi from "../../../../contract/artifacts/contracts/LendingBorrowing.sol/LendingBorrowing.json";
+import lendingAbi from "../../../abi/lendingAbi.json";
 import {
   useWeb3ModalProvider,
   useWeb3ModalAccount,
@@ -26,7 +26,7 @@ export const Lending = () => {
   const infuraProvider = new ethers.JsonRpcProvider(
     `https://linea-sepolia.infura.io/v3/${process.env.NEXT_PUBLIC_INFURA_API_KEY}`
   );
-  const lendingAbi = abi.abi;
+
   const tokenContract = new ethers.Contract(
     tokenAddress,
     tokenAbi,

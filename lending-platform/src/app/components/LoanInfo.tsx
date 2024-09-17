@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ethers } from "ethers";
-import abi from "../../../../contract/artifacts/contracts/LendingBorrowing.sol/LendingBorrowing.json";
+import lendingAbi from "../../../abi/lendingAbi.json";
 import {
   useWeb3ModalProvider,
   useWeb3ModalAccount,
@@ -16,7 +16,7 @@ export const LoanInfo = () => {
   const { address, chainId, isConnected } = useWeb3ModalAccount();
 
   const lendingAddress = process.env.NEXT_PUBLIC_LENDING_ADDRESS ?? "";
-  const lendingAbi = abi.abi;
+
   const infuraProvider = new ethers.JsonRpcProvider(
     `https://linea-sepolia.infura.io/v3/${process.env.NEXT_PUBLIC_INFURA_API_KEY}`
   );
@@ -64,12 +64,12 @@ export const LoanInfo = () => {
         };
 
         // Check if the logged-in wallet is the borrower
-        if (borrower.toLowerCase() === address!.toLowerCase()) {
+        if (address && borrower.toLowerCase() === address.toLowerCase()) {
           borrowerLoansTemp.push(loanData);
         }
 
         // Check if the logged-in wallet is the lender
-        if (lender.toLowerCase() === address!.toLowerCase()) {
+        if (address && lender.toLowerCase() === address.toLowerCase()) {
           lenderLoansTemp.push(loanData);
         }
       }
