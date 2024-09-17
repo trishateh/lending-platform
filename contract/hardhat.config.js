@@ -1,6 +1,6 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config();
-const { PRIVATE_KEY, INFURA_API_KEY, ETHERSCAN_API_KEY } = process.env;
+const { PRIVATE_KEY, INFURA_API_KEY, LINEASCAN_API_KEY } = process.env;
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -17,7 +17,17 @@ module.exports = {
   },
   etherscan: {
     apiKey: {
-      linea_sepolia: process.env.ETHERSCAN_API_KEY,
+      linea_sepolia: LINEASCAN_API_KEY,
     },
+    customChains: [
+      {
+        network: "linea_sepolia",
+        chainId: 59141,
+        urls: {
+          apiURL: "https://api-sepolia.lineascan.build/api",
+          browserURL: "https://sepolia.lineascan.build/address",
+        },
+      },
+    ],
   },
 };
