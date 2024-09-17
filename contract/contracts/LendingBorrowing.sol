@@ -74,6 +74,8 @@ contract LendingBorrowing is ReentrancyGuard, Ownable, IERC721Receiver {
      * @param _nftTokenId The NFT token ID used as collateral.
      * @param _nftPrice The price of the NFT used as collateral. Retrieved from oracle or API.
      * @return loanId The ID of the loan transaction.
+     * #if_succeeds {:msg "Ensures that the loan amount is less than or equal to the collateral's price"} _amount <= _nftPrice;
+     * #if_succeeds  {:msg "Verifies that the newly created loan has the correct borrower."} loans[loanCount - 1].borrower == msg.sender;
      */
     function createLoan(
         uint256 _amount,
@@ -115,6 +117,8 @@ contract LendingBorrowing is ReentrancyGuard, Ownable, IERC721Receiver {
     /**
      * @notice Funds the loan.
      * @param _loanId The ID of the loan.
+     * #if_succeeds {:msg "Ensures that the lender has enough tokens to fund the loan"} lendingToken.balanceOf(msg.sender) >= loans[_loanId].amount;
+     * #if_succeeds {:msg "erifies that the loan amount is transferred correctly to the borrower"} lendingToken.balanceOf(loans[_loanId].borrower) == old(lendingToken.balanceOf(loans[_loanId].borrower) + loans[_loanId].amount);
      */
     function fundLoan(uint256 _loanId) external nonReentrant {
         Loan storage loan = loans[_loanId];
@@ -139,6 +143,9 @@ contract LendingBorrowing is ReentrancyGuard, Ownable, IERC721Receiver {
     /**
      * @notice Borrower repays the loan and gets back NFT collateral.
      * @param _loanId The ID of the loan being repaid.
+      * #if_succeeds {:msg "Ensures that the repayment amount includes the principal plus the calculated interest"} getRepaymentAmount(loans[_loanId].amount) == loans[_loanId].amount + ((loans[_loanId].amount * interestRate) / 100);
+      * #if_succeeds {:msg "Ensures the borrower has enough balance to repay the loan"} lendingToken.balanceOf(msg.sender) >= getRepaymentAmount(loans[_loanId].amount);
+      #if_succeeds {:msg "Ensures the NFT is transferred back to the borrower after repayment"} IERC721(loans[_loanId].nftContract).ownerOf(loans[_loanId].nftTokenId) == loans[_loanId].borrower;
      */
     function repayLoan(uint256 _loanId) external nonReentrant {
         Loan storage loan = loans[_loanId];
@@ -175,6 +182,8 @@ contract LendingBorrowing is ReentrancyGuard, Ownable, IERC721Receiver {
     /**
      * @notice Allows borrower to take back NFT if loan not yet funded. If borrower defaults on the loan, the NFT can be claimed by the lender.
      * @param _loanId The ID of the loan.
+     * #if_succeeds {:msg "Ensures that the lender can only claim collateral if the loan is in default or has been canceled"} loans[_loanId].status == LoanStatus.DEFAULTED || loans[_loanId].status == LoanStatus.CANCELED;
+     * #if_succeeds {:msg " Ensures the NFT is transferred to the lender if the loan defaults"} loans[_loanId].status == LoanStatus.DEFAULTED ==> IERC721(loans[_loanId].nftContract).ownerOf(loans[_loanId].nftTokenId) == loans[_loanId].lender;
      */
     function claimCollateral(uint256 _loanId) external nonReentrant {
         Loan storage loan = loans[_loanId];
