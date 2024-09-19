@@ -151,7 +151,7 @@ export const LoanInfo = () => {
                 </div>
               ))
             ) : (
-              <p>No loans as a borrower.</p>
+              <p className="text-gray-400">No loans as a borrower.</p>
             )}
           </div>
 

@@ -57,11 +57,11 @@ export const TokenList = () => {
   return (
     <>
       {!isConnected && !loading ? (
-        <div className="text-center text-lg text-gray-200">
+        <div className="text-center text-lg text-gray-400">
           Please connect your wallet
         </div>
       ) : loading ? (
-        <div className="text-center text-lg text-gray-200">
+        <div className="text-center text-lg text-gray-400">
           Loading tokens...
         </div>
       ) : (

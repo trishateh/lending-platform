@@ -105,12 +105,12 @@ export const NftList = () => {
   return (
     <div className="container mx-auto py-10">
       {!isConnected && !loading ? (
-        <div className="text-center text-lg text-gray-200">
+        <div className="text-center text-lg text-gray-400">
           Please connect your wallet
         </div>
       ) : loading ? (
-        <div className="text-center text-lg text-gray-200">Loading NFTs...</div>
-      ) : nfts.length > 0 ? (
+        <div className="text-center text-lg text-gray-400">Loading NFTs...</div>
+      ) : nfts && nfts.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {nfts.map((nft: any, index: number) => (
             <div
@@ -131,7 +131,7 @@ export const NftList = () => {
           ))}
         </div>
       ) : (
-        <div className="flex flex-col justify-center items-center text-center text-lg text-gray-200">
+        <div className="flex flex-col justify-center items-center text-center text-lg text-gray-200 gap-3">
           You don't own any NFTs yet.
           <button
             onClick={() => handleMintNft()}
