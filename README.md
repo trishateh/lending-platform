@@ -137,5 +137,4 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 ## Deployments
-Deployed to [lending-platform-6xzakz9nb-trishatehs-projects.vercel.app](lending-platform-6xzakz9nb-trishatehs-projects.vercel.app
-)
+Deployed to [https://lending-platform.vercel.app/](https://lending-platform.vercel.app/)
